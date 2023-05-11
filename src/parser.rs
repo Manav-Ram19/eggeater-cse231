@@ -107,8 +107,7 @@ fn parse_sexp_into_expr(s: &Sexp) -> Expr {
                 [Sexp::Atom(S(op)), exprs @ ..] if op == "block" => parse_block_operation(exprs),
                 [Sexp::Atom(S(op)), e] if op == "loop" => parse_loop_expr(e),
                 [Sexp::Atom(S(op)), e] if op == "break" => parse_break_expr(e),
-                [Sexp::Atom(S(funcname))] => parse_call_no_args(funcname),
-                [Sexp::Atom(S(funcname)), Sexp::List(params)] => parse_call(funcname, params),
+                [Sexp::Atom(S(funcname)), exprs @ ..] => parse_call(funcname, exprs),
                 _ => panic!("Invalid Sexpr format: {s}")
             }
         },
@@ -222,23 +221,16 @@ fn parse_sexpr_atom(s: &Atom) -> Expr {
 }
 
 /**
- * Parses function call expression for no arg case
- */
-fn parse_call_no_args(funcname: &String) -> Expr {
-    if RESERVED_WORDS.contains(&&funcname[..]) {
-        panic!("Invalid usage of expression: {funcname}")
-    }
-    Expr::CallNoArg(funcname.to_string())
-}
-
-/**
  * Parses function call expression
  */
-fn parse_call(funcname: &String, args: &Vec<Sexp>) -> Expr {
+fn parse_call(funcname: &String, exprs: &[Sexp]) -> Expr {
     if RESERVED_WORDS.contains(&&funcname[..]) {
         panic!("Invalid usage of expression: {funcname}")
     }
-    Expr::Call(funcname.to_string(), args.into_iter().map(|sexp| parse_sexp_into_expr(sexp)).collect())
+    match exprs.len() {
+        0 => Expr::CallNoArg(funcname.to_string()),
+        _ =>  Expr::Call(funcname.to_string(), exprs.into_iter().map(|sexp| parse_sexp_into_expr(sexp)).collect())
+    }
 }
 
 /**

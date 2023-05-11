@@ -41,7 +41,6 @@ enum Instr {
     ISar(Val, Val),
     ICmp(Val, Val),
     IJe(String),
-    IJne(String),
     IJo(String),
     IJmp(String),
     IJnz(String),
@@ -125,7 +124,7 @@ pub fn compile_program(program: &Program) -> (String, String) {
     (defs, main)
 }
 
-fn compile_definition(d: &Definition, labels: &mut i32) -> String {
+fn compile_definition(d: &Definition, _labels: &mut i32) -> String {
     match d {
         Definition::FunNoArg(_, _) => todo!(),
         Definition::FunWithArg(_, _, _) => todo!(),
@@ -463,7 +462,6 @@ fn instr_to_str(i: &Instr) -> String {
         Instr::IAnd(v1, v2) => format!("\nand {}, {}", val_to_str(v1), val_to_str(v2)),
         Instr::ICmp(v1, v2) => format!("\ncmp {}, {}", val_to_str(v1), val_to_str(v2)),
         Instr::IJe(s) => format!("\nje {}", s.to_string()),
-        Instr::IJne(s) => format!("\njne {}", s.to_string()),
         Instr::IJmp(s) => format!("\njmp {}", s.to_string()),
         Instr::ILabel(s) => format!("\n {}:", s.to_string()),
         Instr::IJo(s) => format!("\njo {}", s.to_string()),

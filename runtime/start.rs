@@ -1,4 +1,7 @@
 use std::env;
+use crate::constants::INT_MAX;
+use crate::constants::INT_MIN;
+
 
 #[link(name = "our_code")]
 extern "C" {
@@ -11,15 +14,41 @@ extern "C" {
 
 #[export_name = "\x01snek_error"]
 pub extern "C" fn snek_error(errcode: i64) {
-    // TODO: print error message according to writeup
-    eprintln!("an error ocurred {errcode}");
+    match errcode {
+        1 => eprintln!("overflow occured with error code: {errcode}"),
+        2 => eprintln!("invalid argument occured with error code: {errcode}"),
+        _ => eprintln!("an error ocurred {errcode}")
+    }
     std::process::exit(1);
 }
 
 fn parse_input(input: &str) -> u64 {
-    // TODO: parse the input string into internal value representation
-    0
+    match input {
+        "true" => 3,
+        "false" => 1,
+        _ => match input.parse::<i64>() {
+            Ok(n) => {
+                if n > INT_MAX || n < INT_MIN {
+                    panic!("Invalid out of bounds input: {}", input)
+                } else {
+                    return (n << 1) as u64;
+                }
+            }
+            _ => {
+                panic!("Invalid input: {}", input)
+            }
+        }
+    }
 }
+
+fn print_value(val : i64) {
+    if val == 3 { println!("true"); }
+    else if val == 1 { println!("false"); }
+    else if val % 2 == 0 { println!("{}", val >> 1); }
+    else {
+      println!("Unknown value: {}", val);
+    }
+  }
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -27,5 +56,5 @@ fn main() {
     let input = parse_input(&input);
 
     let i: u64 = unsafe { our_code_starts_here(input) };
-    println!("{i}");
+    print_value(i as i64);
 }

@@ -2,27 +2,40 @@ use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 
+use diamondback::compiler::compile_program;
+use diamondback::parser::parse_program;
+
 fn main() -> std::io::Result<()> {
     let args: Vec<String> = env::args().collect();
 
     let in_name = &args[1];
     let out_name = &args[2];
 
-    // You will make result hold the result of actually compiling
-    let result = "mov rax, 131";
+    let mut in_file = File::open(in_name)?;
+    let mut in_contents = String::new();
+    in_file.read_to_string(&mut in_contents)?;
+
+    let parsed_program = parse_program(&in_contents);
+    let (defs, main) = compile_program(&parsed_program);
 
     let asm_program = format!(
         "
 section .text
-extern snek_error
 global our_code_starts_here
+extern snek_error
+extern snek_print
+throw_error:
+  push rsp
+  call snek_error
+  ret
+{}
 our_code_starts_here:
   {}
   ret
 ",
-        result
+        defs,
+        main
     );
-
     let mut out_file = File::create(out_name)?;
     out_file.write_all(asm_program.as_bytes())?;
 

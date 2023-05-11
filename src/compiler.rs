@@ -264,7 +264,7 @@ fn compile_binop(
                 labels,
             );
             check_if_both_num(instrs, Val::RegOffset(RSP, context.si), Val::Reg(RAX));
-            instrs.push(Instr::IAdd(Val::Reg(RAX), Val::RegOffset(RSP, context.si)));
+            instrs.push(Instr::ISub(Val::Reg(RAX), Val::RegOffset(RSP, context.si)));
             check_for_overflow(instrs);
         }
         Op2::Times => {

@@ -6,7 +6,7 @@ use crate::constants::*;
 /**
  * Reserved words that cannot be used for identifier names
  */
-const RESERVED_WORDS: &'static [&str] = &["true", "false","add1", "sub1", "isnum", "isbool","let", "block", "set", "if", "break", "set!", "+", "-", "*", "=", ">", ">=", "<", "<=", "input", "print"];
+const RESERVED_WORDS: &'static [&str] = &["true", "false","add1", "sub1", "isnum", "isbool","let", "block", "set", "if", "break", "set!", "loop","+", "-", "*", "=", ">", ">=", "<", "<=", "input", "print"];
 
 /**
  * Converts the contents of the input program into a Program AST following the abstract syntax

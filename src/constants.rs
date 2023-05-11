@@ -23,8 +23,7 @@ pub struct Program {
  */
 #[derive(Debug)]
 pub enum Definition {
-    FunNoArg(String, Expr),
-    FunWithArg(String, Vec<String>, Expr)
+    Func(String, Vec<String>, Expr),
 }
 
 /**
@@ -43,7 +42,6 @@ pub enum Expr {
     Block(Vec<Expr>),
     Loop(Box<Expr>),
     Break(Box<Expr>),
-    CallNoArg(String),
     Call(String, Vec<Expr>)
 }
 

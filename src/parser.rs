@@ -69,8 +69,7 @@ fn parse_sexp_into_func_def(s: &Sexp) -> Definition {
                 0 => panic!("Invalid Cannot create a function definiton without a function name."),
                 _ => {
                     match name_vec.len() {
-                        1 => Definition::FunNoArg(name_vec[0].to_string(), parse_sexp_into_expr(body)),
-                        _ => Definition::FunWithArg(name_vec[0].to_string(), name_vec.iter().skip(0).map(|name_as_sexpr| name_as_sexpr.to_string()).collect(), parse_sexp_into_expr(body))
+                        _ => Definition::Func(name_vec[0].to_string(), name_vec.iter().skip(0).map(|name_as_sexpr| name_as_sexpr.to_string()).collect(), parse_sexp_into_expr(body))
                     }
                 }
             },
@@ -227,10 +226,7 @@ fn parse_call(funcname: &String, exprs: &[Sexp]) -> Expr {
     if RESERVED_WORDS.contains(&&funcname[..]) {
         panic!("Invalid usage of expression: {funcname}")
     }
-    match exprs.len() {
-        0 => Expr::CallNoArg(funcname.to_string()),
-        _ =>  Expr::Call(funcname.to_string(), exprs.into_iter().map(|sexp| parse_sexp_into_expr(sexp)).collect())
-    }
+    Expr::Call(funcname.to_string(), exprs.into_iter().map(|sexp| parse_sexp_into_expr(sexp)).collect())
 }
 
 /**

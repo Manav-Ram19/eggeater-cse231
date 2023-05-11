@@ -6,6 +6,7 @@ use crate::constants::*;
 use crate::error::*;
 
 pub const ERROR_LABEL: &str = "throw_error";
+pub const PRINT_LABEL: &str = "snek_print";
 
 #[derive(Debug)]
 enum Val {
@@ -53,6 +54,7 @@ enum Instr {
     ICmovge(Val, Val),
     IOr(Val, Val),
     IAnd(Val, Val),
+    ICall(String)
 }
 struct Context<'a> {
     si: i32,
@@ -124,10 +126,26 @@ pub fn compile_program(program: &Program) -> (String, String) {
     (defs, main)
 }
 
-fn compile_definition(d: &Definition, _labels: &mut i32) -> String {
+fn compile_definition(d: &Definition, labels: &mut i32) -> String {
     match d {
-        Definition::FunNoArg(_, _) => todo!(),
-        Definition::FunWithArg(_, _, _) => todo!(),
+        Definition::Func(funcname, args,body) => {
+            let mut env = HashMap::new();
+            let mut start_loc = -1;
+            for arg in args {
+                env.insert(arg.to_string(), start_loc);
+                start_loc -= 1;
+            }
+            let body_instrs_as_str = compile_expr_to_string(
+                body,
+                &ContextBuilder::new(2, &env, &String::from("")).build(),
+                labels,
+            );
+            format!(
+                "{funcname}:
+                {body_instrs_as_str}
+                ret"
+            )
+        }
     }
 }
 
@@ -147,7 +165,7 @@ fn compile_to_instrs(expr: &Expr, instrs: &mut Vec<Instr>, context: &Context, la
         Expr::Id(id) => match context.env.contains_key(id) {
             true => instrs.push(Instr::IMov(
                 Val::Reg(RAX),
-                Val::RegOffset(RSP, *(context.env.get(id).unwrap())),
+                Val::RegOffset(RSP, -*(context.env.get(id).unwrap())),
             )),
             false => panic!("Unbound variable identifier {id}"),
         },
@@ -157,22 +175,25 @@ fn compile_to_instrs(expr: &Expr, instrs: &mut Vec<Instr>, context: &Context, la
         Expr::BinOp(op, e1, e2) => compile_binop(op, e1, e2, instrs, context, labels),
         Expr::Set(id, e) => compile_set(id, e, instrs, context, labels),
         Expr::If(cond, then, els) => compile_if(cond, then, els, instrs, context, labels),
-        Expr::Block(es) => es.iter().for_each(|e| compile_to_instrs(e, instrs, context, labels)),
+        Expr::Block(es) => es
+            .iter()
+            .for_each(|e| compile_to_instrs(e, instrs, context, labels)),
         Expr::Loop(e) => compile_loop(e, instrs, context, labels),
         Expr::Break(e) => compile_break(e, instrs, context, labels),
-        Expr::CallNoArg(_) => todo!(),
-        Expr::Call(_, _) => todo!(),
+        Expr::Call(funcname, arg_exprs) => compile_func_call(funcname, arg_exprs, instrs, context, labels),
     }
 }
 
-
+fn compile_func_call(funcname: &String, arg_exprs: &Vec<Expr>, instrs: &mut Vec<Instr>, context: &Context, labels: &mut i32) {
+    todo!()
+}
 
 fn compile_break(e: &Expr, instrs: &mut Vec<Instr>, context: &Context, labels: &mut i32) {
     if context.brake == "" {
         panic!("Error: break occurred outside a loop in sexp")
-      }
-      compile_to_instrs(e, instrs, context, labels);
-      instrs.push(Instr::IJmp(context.brake.to_string()));
+    }
+    compile_to_instrs(e, instrs, context, labels);
+    instrs.push(Instr::IJmp(context.brake.to_string()));
 }
 
 fn compile_loop(e: &Expr, instrs: &mut Vec<Instr>, context: &Context, labels: &mut i32) {
@@ -225,7 +246,7 @@ fn compile_set(
     } else {
         compile_to_instrs(e, instrs, context, labels);
         instrs.push(Instr::IMov(
-            Val::RegOffset(RSP, *(context.env.get(id).unwrap())),
+            Val::RegOffset(RSP, -*(context.env.get(id).unwrap())),
             Val::Reg(RAX),
         ));
     }
@@ -242,42 +263,42 @@ fn compile_binop(
     match op {
         Op2::Plus => {
             compile_to_instrs(e1, instrs, context, labels);
-            instrs.push(Instr::IMov(Val::RegOffset(RSP, context.si), Val::Reg(RAX)));
+            instrs.push(Instr::IMov(Val::RegOffset(RSP, -context.si), Val::Reg(RAX)));
             compile_to_instrs(
                 e2,
                 instrs,
                 &ContextBuilder::from(context).si(context.si + 1).build(),
                 labels,
             );
-            check_if_both_num(instrs, Val::RegOffset(RSP, context.si), Val::Reg(RAX));
-            instrs.push(Instr::IAdd(Val::Reg(RAX), Val::RegOffset(RSP, context.si)));
+            check_if_both_num(instrs, Val::RegOffset(RSP, -context.si), Val::Reg(RAX));
+            instrs.push(Instr::IAdd(Val::Reg(RAX), Val::RegOffset(RSP, -context.si)));
             check_for_overflow(instrs);
         }
         Op2::Minus => {
             compile_to_instrs(e2, instrs, context, labels);
-            instrs.push(Instr::IMov(Val::RegOffset(RSP, context.si), Val::Reg(RAX)));
+            instrs.push(Instr::IMov(Val::RegOffset(RSP, -context.si), Val::Reg(RAX)));
             compile_to_instrs(
                 e1,
                 instrs,
                 &ContextBuilder::from(context).si(context.si + 1).build(),
                 labels,
             );
-            check_if_both_num(instrs, Val::RegOffset(RSP, context.si), Val::Reg(RAX));
-            instrs.push(Instr::ISub(Val::Reg(RAX), Val::RegOffset(RSP, context.si)));
+            check_if_both_num(instrs, Val::RegOffset(RSP, -context.si), Val::Reg(RAX));
+            instrs.push(Instr::ISub(Val::Reg(RAX), Val::RegOffset(RSP, -context.si)));
             check_for_overflow(instrs);
         }
         Op2::Times => {
             compile_to_instrs(e1, instrs, context, labels);
-            instrs.push(Instr::IMov(Val::RegOffset(RSP, context.si), Val::Reg(RAX)));
+            instrs.push(Instr::IMov(Val::RegOffset(RSP, -context.si), Val::Reg(RAX)));
             compile_to_instrs(
                 e2,
                 instrs,
                 &ContextBuilder::from(context).si(context.si + 1).build(),
                 labels,
             );
-            check_if_both_num(instrs, Val::RegOffset(RSP, context.si), Val::Reg(RAX));
+            check_if_both_num(instrs, Val::RegOffset(RSP, -context.si), Val::Reg(RAX));
             instrs.push(Instr::ISar(Val::Reg(RAX), Val::Imm(1)));
-            instrs.push(Instr::IMul(Val::Reg(RAX), Val::RegOffset(RSP, context.si)));
+            instrs.push(Instr::IMul(Val::Reg(RAX), Val::RegOffset(RSP, -context.si)));
             check_for_overflow(instrs);
         }
         _ => compile_conditional_binop(op, e1, e2, instrs, context, labels),
@@ -293,7 +314,7 @@ fn compile_conditional_binop(
     labels: &mut i32,
 ) {
     compile_to_instrs(e2, instrs, context, labels);
-    instrs.push(Instr::IMov(Val::RegOffset(RSP, context.si), Val::Reg(RAX)));
+    instrs.push(Instr::IMov(Val::RegOffset(RSP, -context.si), Val::Reg(RAX)));
     compile_to_instrs(
         e1,
         instrs,
@@ -301,10 +322,10 @@ fn compile_conditional_binop(
         labels,
     );
     match op {
-        Op2::Equal => check_if_same_type(instrs, Val::Reg(RAX), Val::RegOffset(RSP, context.si)),
-        _ => check_if_both_num(instrs, Val::Reg(RAX), Val::RegOffset(RSP, context.si)),
+        Op2::Equal => check_if_same_type(instrs, Val::Reg(RAX), Val::RegOffset(RSP, -context.si)),
+        _ => check_if_both_num(instrs, Val::Reg(RAX), Val::RegOffset(RSP, -context.si)),
     };
-    instrs.push(Instr::ICmp(Val::Reg(RAX), Val::RegOffset(RSP, context.si)));
+    instrs.push(Instr::ICmp(Val::Reg(RAX), Val::RegOffset(RSP, -context.si)));
     instrs.push(Instr::IMov(Val::Reg(RAX), Val::Imm(1)));
     instrs.push(Instr::IMov(Val::Reg(RBX), Val::Imm(3)));
     match op {
@@ -332,7 +353,16 @@ fn compile_unop(op: &Op1, e: &Expr, instrs: &mut Vec<Instr>, context: &Context, 
         }
         Op1::IsNum => check_type(instrs, VarTypes::NUM),
         Op1::IsBool => check_type(instrs, VarTypes::BOOL),
-        Op1::Print => todo!(),
+        Op1::Print => {
+            let offset_without_word_size = context.si + (context.si % 2);
+            let actual_offset = 8 * offset_without_word_size;
+            instrs.push(Instr::IMov(Val::RegOffset(RSP, -offset_without_word_size), Val::Reg(RDI)));
+            instrs.push(Instr::ISub(Val::Reg(RSP), Val::Imm(actual_offset.into())));
+            instrs.push(Instr::IMov(Val::Reg(RDI), Val::Reg(RAX)));
+            instrs.push(Instr::ICall(PRINT_LABEL.to_string()));
+            instrs.push(Instr::IAdd(Val::Reg(RSP), Val::Imm(actual_offset.into())));
+            instrs.push(Instr::IMov(Val::Reg(RDI), Val::RegOffset(RSP, -offset_without_word_size)));
+        },
     }
 }
 
@@ -362,7 +392,7 @@ fn compile_let(
                 .build(),
             labels,
         );
-        instrs.push(Instr::IMov(Val::RegOffset(RSP, new_si), Val::Reg(RAX)));
+        instrs.push(Instr::IMov(Val::RegOffset(RSP, -new_si), Val::Reg(RAX)));
         new_env = new_env.update(identifier.to_string(), new_si);
         new_si += 1;
     });
@@ -473,6 +503,7 @@ fn instr_to_str(i: &Instr) -> String {
         Instr::ICmovle(v1, v2) => format!("\ncmovle {}, {}", val_to_str(v1), val_to_str(v2)),
         Instr::ICmovg(v1, v2) => format!("\ncmovg {}, {}", val_to_str(v1), val_to_str(v2)),
         Instr::ICmovge(v1, v2) => format!("\ncmovge {}, {}", val_to_str(v1), val_to_str(v2)),
+        Instr::ICall(s) => format!("\ncall {}", s.to_string())
     }
 }
 
@@ -481,7 +512,7 @@ fn val_to_str(v: &Val) -> String {
     match v {
         Val::Imm(n) => (*n).to_string(),
         Val::Reg(r) => reg_to_str(r),
-        Val::RegOffset(r, n) => format!("[{}-{}]", reg_to_str(r), n * 8),
+        Val::RegOffset(r, n) => format!("[{}+{}]", reg_to_str(r), n * 8),
     }
 }
 

@@ -20,6 +20,18 @@ pub extern "C" fn snek_error(errcode: i64) {
     std::process::exit(1);
 }
 
+#[no_mangle]
+#[export_name = "\x01snek_print"]
+fn snek_print(val : i64) -> i64 {
+  if val == 3 { println!("true"); }
+  else if val == 1 { println!("false"); }
+  else if val % 2 == 0 { println!("{}", val >> 1); }
+  else {
+    println!("Unknown value: {}", val);
+  }
+  return val;
+}
+
 fn parse_input(input: &str) -> u64 {
     match input {
         "true" => 3,

@@ -23,6 +23,7 @@ fn main() -> std::io::Result<()> {
       section .text
       global our_code_starts_here
       extern snek_error
+      extern snek_print
       throw_error:
       mov rdi, rbx
       push rsp

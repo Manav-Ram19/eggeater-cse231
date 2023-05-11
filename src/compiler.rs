@@ -420,7 +420,7 @@ fn check_if_both_num(instrs: &mut Vec<Instr>, r1: Val, r2: Val) {
     instrs.push(Instr::IAnd(Val::Reg(RBX), Val::Imm(1)));
     instrs.push(Instr::ITest(Val::Reg(RBX), Val::Imm(1)));
     instrs.push(Instr::IMov(Val::Reg(RBX), Val::Imm(INVALID_ARGUMENT_CODE)));
-    instrs.push(Instr::IJe(ERROR_LABEL.to_string()));
+    instrs.push(Instr::IJnz(ERROR_LABEL.to_string()));
 }
 
 fn check_if_same_type(instrs: &mut Vec<Instr>, r1: Val, r2: Val) {
@@ -429,7 +429,7 @@ fn check_if_same_type(instrs: &mut Vec<Instr>, r1: Val, r2: Val) {
     instrs.push(Instr::IAnd(Val::Reg(RBX), Val::Imm(1)));
     instrs.push(Instr::ITest(Val::Reg(RBX), Val::Imm(1)));
     instrs.push(Instr::IMov(Val::Reg(RBX), Val::Imm(INVALID_ARGUMENT_CODE)));
-    instrs.push(Instr::IJe(ERROR_LABEL.to_string()));
+    instrs.push(Instr::IJnz(ERROR_LABEL.to_string()));
 }
 
 fn check_for_overflow(instrs: &mut Vec<Instr>) {

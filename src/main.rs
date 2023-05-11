@@ -19,23 +19,23 @@ fn main() -> std::io::Result<()> {
     let (defs, main) = compile_program(&parsed_program);
 
     let asm_program = format!(
-        "
-section .text
-global our_code_starts_here
-extern snek_error
-extern snek_print
-throw_error:
-  push rsp
-  call snek_error
-  ret
-{}
-our_code_starts_here:
-  {}
-  ret
-",
+      "
+      section .text
+      global our_code_starts_here
+      extern snek_error
+      throw_error:
+      mov rdi, rbx
+      push rsp
+      call snek_error
+      {}
+      our_code_starts_here:
+        {}
+        ret
+      ",
         defs,
         main
     );
+    print!("{}", asm_program);
     let mut out_file = File::create(out_name)?;
     out_file.write_all(asm_program.as_bytes())?;
 

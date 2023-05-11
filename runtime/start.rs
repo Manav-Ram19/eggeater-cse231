@@ -1,6 +1,4 @@
 use std::env;
-use crate::constants::INT_MAX;
-use crate::constants::INT_MIN;
 
 
 #[link(name = "our_code")]
@@ -28,7 +26,7 @@ fn parse_input(input: &str) -> u64 {
         "false" => 1,
         _ => match input.parse::<i64>() {
             Ok(n) => {
-                if n > INT_MAX || n < INT_MIN {
+                if n > 4611686018427387903 || n < -4611686018427387904 {
                     panic!("Invalid out of bounds input: {}", input)
                 } else {
                     return (n << 1) as u64;

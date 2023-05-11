@@ -6,7 +6,7 @@ use crate::constants::*;
 /**
  * Reserved words that cannot be used for identifier names
  */
-const RESERVED_WORDS: &'static [&str] = &["true", "false","add1", "sub1", "isnum", "isbool","let", "block", "set", "if", "break", "set!", "loop","+", "-", "*", "=", ">", ">=", "<", "<=", "input", "print"];
+const RESERVED_WORDS: &'static [&str] = &["true", "false","add1", "sub1", "isnum", "isbool","let", "block", "set!", "if", "break", "set!", "loop","+", "-", "*", "=", ">", ">=", "<", "<=", "input", "print"];
 
 /**
  * Converts the contents of the input program into a Program AST following the abstract syntax
@@ -102,7 +102,7 @@ fn parse_sexp_into_expr(s: &Sexp) -> Expr {
                 [Sexp::Atom(S(op)), e1, e2] if op == "<=" => parse_binop_expr(Op2::LessEqual, e1, e2),
                 [Sexp::Atom(S(op)), e1, e2] if op == ">=" => parse_binop_expr(Op2::GreaterEqual, e1, e2),
                 [Sexp::Atom(S(op)),Sexp::List(bindings), body] if op == "let" => parse_let_expr(bindings, body),
-                [Sexp::Atom(S(op)), Sexp::Atom(S(id)), e] if op == "set" => parse_set_expr(id, e),
+                [Sexp::Atom(S(op)), Sexp::Atom(S(id)), e] if op == "set!" => parse_set_expr(id, e),
                 [Sexp::Atom(S(op)), cond, then, els] if op == "if" =>  parse_if_expr(cond, then, els),
                 [Sexp::Atom(S(op)), exprs @ ..] if op == "block" => parse_block_operation(exprs),
                 [Sexp::Atom(S(op)), e] if op == "loop" => parse_loop_expr(e),

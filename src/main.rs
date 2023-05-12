@@ -27,6 +27,7 @@ fn main() -> std::io::Result<()> {
       throw_error:
       mov rdi, rbx
       push rsp
+      sub rsp, 8
       call snek_error
       {}
       our_code_starts_here:

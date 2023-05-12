@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use sexp::Atom::*;
 use sexp::*;
 
@@ -78,20 +80,36 @@ fn parse_sexp_into_func_def(s: &Sexp) -> Definition {
                     0 => panic!(
                         "Invalid Cannot create a function definiton without a function name."
                     ),
-                    _  => Definition::Func(
+                    _  => {
+                        let argNames = name_vec
+                        .iter()
+                        .skip(1)
+                        .map(|name_as_sexpr| name_as_sexpr.to_string())
+                        .collect();
+                        validate_fn_arg(&argNames);
+                        Definition::Func(
                             name_vec[0].to_string(),
-                            name_vec
-                                .iter()
-                                .skip(1)
-                                .map(|name_as_sexpr| name_as_sexpr.to_string())
-                                .collect(),
+                            argNames,
                             parse_sexp_into_expr(body),
                         )
+                    }
                 }
             }
             _ => panic!("Invalid Not a function definition"),
         },
         _ => panic!("Invalid Not a function definition"),
+    }
+}
+
+fn validate_fn_arg(argnames: &Vec<String>) {
+    let mut unique_arg_name = HashSet::new();
+    for arg in argnames {
+        if RESERVED_WORDS.contains(&&arg[..]) {
+            panic!("Invalid reserved word in arg list for func")
+        }
+        if unique_arg_name.insert(arg) == false {
+            panic!("Invalid duplicate argument for func")
+        }
     }
 }
 

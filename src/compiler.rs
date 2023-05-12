@@ -135,10 +135,11 @@ fn compile_definition(d: &Definition, labels: &mut i32) -> String {
         Definition::Func(funcname, args, body) => {
             let mut env = HashMap::new();
             let mut loc = 1;
-            let depth = depth(body);
+            let mut depth = depth(body);
+            depth = if depth % 2 == 0 {depth} else {depth+1};
 /*             println!("{:?}", d); */
             for arg in args {
-/*                 println!("arg: {} depth: {} loc: {}", arg, depth, loc); */
+                println!("arg: {} depth: {} loc: {}", arg, depth, loc);
                 env.insert(arg.to_string(), 8*depth + 8*loc);
                 loc += 1;
             }
@@ -187,8 +188,9 @@ fn depth(e: &Expr) -> i32 {
 }
 
 fn compile_expr_to_string(e: &Expr, context: &Context, labels: &mut i32) -> String {
-    let depth = depth(e);
-    let offset = if depth % 2 == 0 {depth*8} else {(depth+1)*8};
+    let mut depth = depth(e);
+    depth = if depth % 2 == 0 {depth} else {depth+1};
+    let offset = depth*8;
     let mut instrs: Vec<Instr> = Vec::new();
     compile_to_instrs(e, &mut instrs, context, labels);
     /* print!("{}", instrs.iter().map(instr_to_str).collect::<String>()); */
@@ -238,29 +240,27 @@ fn compile_func_call(
     context: &Context,
     labels: &mut i32,
 ) {
-    let mut offset = 0;
+    let offset = (arg_exprs.len() as i32+1)*8;
+    let mut cur_word = context.si*8;
     let mut new_si = context.si;
+    let mut curr_word_after_sub = offset + cur_word;
     if arg_exprs.len() > 0 {
         for arg_expr in arg_exprs.iter().take(arg_exprs.len()-1) {
             compile_to_instrs(arg_expr, instrs, &ContextBuilder::from(context).si(new_si).build(), labels);
-            instrs.push(Instr::IMov(Val::RegOffset(RSP, offset), Val::Reg(RAX)));
-            offset += 8;
+            instrs.push(Instr::IMov(Val::RegOffset(RSP, cur_word), Val::Reg(RAX)));
+            cur_word += 8;
             new_si = new_si + 1;
         }
         compile_to_instrs(arg_exprs.get(arg_exprs.len()-1).unwrap(), instrs, &ContextBuilder::from(context).si(new_si).build(), labels);
-        offset += 8;
     }
-    // for rdi
-    offset += 8;
     instrs.push(Instr::ISub(Val::Reg(RSP), Val::Imm(offset.into())));
     // Move args in stack to be near new RSP location
-    let mut cur_offset_to_old_loc = offset;
     let mut cur_offset_to_new_loc = 0;
     if arg_exprs.len() > 0 {
         for _ in arg_exprs.iter().take(arg_exprs.len()-1) {
-            instrs.push(Instr::IMov(Val::Reg(RBX), Val::RegOffset(RSP, cur_offset_to_old_loc)));
+            instrs.push(Instr::IMov(Val::Reg(RBX), Val::RegOffset(RSP, curr_word_after_sub)));
             instrs.push(Instr::IMov(Val::RegOffset(RSP, cur_offset_to_new_loc), Val::Reg(RBX)));
-            cur_offset_to_old_loc+=8;
+            curr_word_after_sub+=8;
             cur_offset_to_new_loc+=8;
         }
         instrs.push(Instr::IMov(Val::RegOffset(RSP, cur_offset_to_new_loc), Val::Reg(RAX)));

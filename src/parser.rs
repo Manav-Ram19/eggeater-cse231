@@ -32,15 +32,20 @@ fn parse_program_into_ast(s: &Sexp) -> Program {
     match s {
         Sexp::List(vec) => {
             let mut defs: Vec<Definition> = vec![];
+            let mut index = 0;
             for def_or_exp in vec {
                 if is_function_definition(def_or_exp) {
                     defs.push(parse_sexp_into_func_def(def_or_exp));
                 } else {
+                    if index != vec.len()-1 {
+                        panic!("Invalid definition after main")
+                    }
                     return Program {
                         defs: defs,
                         main: parse_sexp_into_expr(def_or_exp),
                     };
                 }
+                index+=1;
             }
             panic!("Invalid Only found definitions");
         }

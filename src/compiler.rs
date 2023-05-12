@@ -469,7 +469,7 @@ fn compile_let(
             labels,
         );
         instrs.push(Instr::IMov(Val::RegOffset(RSP, 8 * new_si), Val::Reg(RAX)));
-        new_env = new_env.update(identifier.to_string(), new_si);
+        new_env = new_env.update(identifier.to_string(), new_si*8);
         new_si += 1;
     });
 

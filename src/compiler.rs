@@ -249,13 +249,13 @@ fn compile_func_call(
     // Move args in stack to be near new RSP location
     let mut cur_offset_to_old_loc = offset + 8;
     let mut cur_offset_to_new_loc = 0;
-    for _ in arg_exprs.iter().take(arg_exprs.len()-1) {
-        instrs.push(Instr::IMov(Val::Reg(RBX), Val::RegOffset(RSP, cur_offset_to_old_loc)));
-        instrs.push(Instr::IMov(Val::RegOffset(RSP, cur_offset_to_new_loc), Val::Reg(RBX)));
-        cur_offset_to_old_loc+=8;
-        cur_offset_to_new_loc+=8;
-    }
     if arg_exprs.len() > 0 {
+        for _ in arg_exprs.iter().take(arg_exprs.len()-1) {
+            instrs.push(Instr::IMov(Val::Reg(RBX), Val::RegOffset(RSP, cur_offset_to_old_loc)));
+            instrs.push(Instr::IMov(Val::RegOffset(RSP, cur_offset_to_new_loc), Val::Reg(RBX)));
+            cur_offset_to_old_loc+=8;
+            cur_offset_to_new_loc+=8;
+        }
         instrs.push(Instr::IMov(Val::RegOffset(RSP, cur_offset_to_new_loc), Val::Reg(RAX)));
         cur_offset_to_new_loc+=8;
         instrs.push(Instr::IMov(Val::RegOffset(RSP, cur_offset_to_new_loc), Val::Reg(RDI)));

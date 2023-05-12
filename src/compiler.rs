@@ -115,6 +115,10 @@ impl<'a> ContextBuilder<'a> {
 pub fn compile_program(program: &Program) -> (String, String) {
     let mut labels: i32 = 0;
     let mut defs: String = String::new();
+
+    if duplicate_func_names(&program.defs) {
+        panic!("Invalid duplicate func name")
+    }
     for def in &program.defs[..] {
         defs.push_str(&compile_definition(&def, &mut labels));
     }
@@ -367,7 +371,7 @@ fn compile_binop(
             check_if_both_num(instrs, Val::RegOffset(RSP, 8 * context.si), Val::Reg(RAX));
             instrs.push(Instr::ISub(
                 Val::Reg(RAX),
-                Val::RegOffset(RSP, -8 * context.si),
+                Val::RegOffset(RSP, 8 * context.si),
             ));
             check_for_overflow(instrs);
         }
@@ -485,6 +489,17 @@ fn duplicate_bindings(bindings: &Vec<(String, Expr)>) -> bool {
     return bindings
         .iter()
         .any(|binding| unique_var_identifiers.insert(binding.0.to_string()) == false);
+}
+
+fn duplicate_func_names(definitions: &Vec<Definition>) -> bool {
+    let mut unique_func_name = HashSet::new();
+    for definition in definitions {
+        let Definition::Func(name, _, _) = definition;
+        if unique_func_name.insert(name) == false {
+            return true;
+        }
+    }
+    return false;
 }
 
 fn convert_i64_to_val(n: &i64) -> Val {

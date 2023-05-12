@@ -274,7 +274,10 @@ fn compile_func_call(
         panic!("Invalid number of args is incorrect")
     }
 
-    let offset = (arg_exprs.len() as i32+1)*8;
+    let mut offset = (arg_exprs.len() as i32+1)*8;
+    if offset % 16 == 0 {
+        offset += 8;
+    }
     let mut cur_word = context.si*8;
     let mut new_si = context.si;
     let mut curr_word_after_sub = offset + cur_word;

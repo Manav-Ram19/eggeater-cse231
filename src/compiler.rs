@@ -139,8 +139,8 @@ fn compile_definition(d: &Definition, labels: &mut i32) -> String {
             depth = if depth % 2 == 0 {depth} else {depth+1};
 /*             println!("{:?}", d); */
             for arg in args {
-                println!("arg: {} depth: {} loc: {}", arg, depth, loc);
-                env.insert(arg.to_string(), 8*depth + 8*loc);
+/*                 println!("arg: {} depth: {} loc: {}", arg, depth, loc);
+ */                env.insert(arg.to_string(), 8*depth + 8*loc);
                 loc += 1;
             }
             let body_instrs_as_str = compile_expr_to_string(

@@ -36,8 +36,8 @@ fn main() -> std::io::Result<()> {
         defs,
         main
     );
-    print!("{}", asm_program);
-    let mut out_file = File::create(out_name)?;
+/*     print!("{}", asm_program);
+ */    let mut out_file = File::create(out_name)?;
     out_file.write_all(asm_program.as_bytes())?;
 
     Ok(())

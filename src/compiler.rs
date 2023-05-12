@@ -60,6 +60,7 @@ struct Context<'a> {
     si: i32,
     env: &'a HashMap<String, i32>,
     brake: &'a str,
+    defintions: &'a Vec<Definition>
 }
 
 // Prompted Chatgpt to implement a builder class for the Context struct using the prompt:
@@ -69,14 +70,16 @@ struct ContextBuilder<'a> {
     si: i32,
     env: Option<&'a HashMap<String, i32>>,
     brake: Option<&'a str>,
+    defintions: Option<&'a Vec<Definition>>
 }
 
 impl<'a> ContextBuilder<'a> {
-    fn new(si: i32, env: &'a HashMap<String, i32>, brake: &'a str) -> Self {
+    fn new(si: i32, env: &'a HashMap<String, i32>, brake: &'a str, defintions: &'a Vec<Definition>) -> Self {
         Self {
             si,
             env: Some(env),
             brake: Some(brake),
+            defintions: Some(defintions)
         }
     }
 
@@ -100,6 +103,7 @@ impl<'a> ContextBuilder<'a> {
             si: context.si,
             env: Some(context.env),
             brake: Some(context.brake),
+            defintions: Some(context.defintions)
         }
     }
 
@@ -108,6 +112,7 @@ impl<'a> ContextBuilder<'a> {
             si: self.si,
             env: self.env.expect("env is not set"),
             brake: self.brake.expect("brake is not set"),
+            defintions: self.defintions.expect("def not set")
         }
     }
 }
@@ -120,17 +125,17 @@ pub fn compile_program(program: &Program) -> (String, String) {
         panic!("Invalid duplicate func name")
     }
     for def in &program.defs[..] {
-        defs.push_str(&compile_definition(&def, &mut labels));
+        defs.push_str(&compile_definition(&def, &mut labels, &program.defs));
     }
     let main = compile_expr_to_string(
         &program.main,
-        &ContextBuilder::new(0, &HashMap::new(), &String::from("")).build(),
+        &ContextBuilder::new(0, &HashMap::new(), &String::from(""), &program.defs).build(),
         &mut labels,
     );
     (defs, main)
 }
 
-fn compile_definition(d: &Definition, labels: &mut i32) -> String {
+fn compile_definition(d: &Definition, labels: &mut i32, definitions: &Vec<Definition>) -> String {
     match d {
         Definition::Func(funcname, args, body) => {
             let mut env = HashMap::new();
@@ -145,7 +150,7 @@ fn compile_definition(d: &Definition, labels: &mut i32) -> String {
             }
             let body_instrs_as_str = compile_expr_to_string(
                 body,
-                &ContextBuilder::new(0, &env, &String::from("")).build(),
+                &ContextBuilder::new(0, &env, &String::from(""), definitions).build(),
                 labels,
             );
             format!(
@@ -240,6 +245,24 @@ fn compile_func_call(
     context: &Context,
     labels: &mut i32,
 ) {
+    let mut found = false;
+    let mut arg_count = 0;
+    for definition in context.defintions {
+        match definition {
+            Definition::Func(name, args, _) => if name == funcname {
+                found = true;
+                arg_count = args.len();
+            },
+        }
+    }
+    if !found {
+        panic!("Invalid func doesn't exist")
+    }
+
+    if arg_exprs.len() != arg_count {
+        panic!("Invalid number of args is incorrect")
+    }
+
     let offset = (arg_exprs.len() as i32+1)*8;
     let mut cur_word = context.si*8;
     let mut new_si = context.si;

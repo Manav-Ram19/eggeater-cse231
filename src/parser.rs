@@ -81,15 +81,15 @@ fn parse_sexp_into_func_def(s: &Sexp) -> Definition {
                         "Invalid Cannot create a function definiton without a function name."
                     ),
                     _  => {
-                        let argNames = name_vec
+                        let arg_names = name_vec
                         .iter()
                         .skip(1)
                         .map(|name_as_sexpr| name_as_sexpr.to_string())
                         .collect();
-                        validate_fn_arg(&argNames);
+                        validate_fn_arg(&arg_names);
                         Definition::Func(
                             name_vec[0].to_string(),
-                            argNames,
+                            arg_names,
                             parse_sexp_into_expr(body),
                         )
                     }

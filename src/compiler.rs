@@ -188,7 +188,7 @@ fn depth(e: &Expr) -> i32 {
 
 fn compile_expr_to_string(e: &Expr, context: &Context, labels: &mut i32) -> String {
     let depth = depth(e);
-    let offset = depth * 8;
+    let offset = (2+depth % 2)*8;
     let mut instrs: Vec<Instr> = Vec::new();
     compile_to_instrs(e, &mut instrs, context, labels);
     /* print!("{}", instrs.iter().map(instr_to_str).collect::<String>()); */

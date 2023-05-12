@@ -258,8 +258,8 @@ fn compile_func_call(
         }
         instrs.push(Instr::IMov(Val::RegOffset(RSP, cur_offset_to_new_loc), Val::Reg(RAX)));
         cur_offset_to_new_loc+=8;
-        instrs.push(Instr::IMov(Val::RegOffset(RSP, cur_offset_to_new_loc), Val::Reg(RDI)));
     }
+    instrs.push(Instr::IMov(Val::RegOffset(RSP, cur_offset_to_new_loc), Val::Reg(RDI)));
     // Call
     instrs.push(Instr::ICall(funcname.to_string()));
     // Restore rdi

@@ -60,7 +60,8 @@ struct Context<'a> {
     si: i32,
     env: &'a HashMap<String, i32>,
     brake: &'a str,
-    defintions: &'a Vec<Definition>
+    defintions: &'a Vec<Definition>,
+    func_mode: bool
 }
 
 // Prompted Chatgpt to implement a builder class for the Context struct using the prompt:
@@ -70,16 +71,18 @@ struct ContextBuilder<'a> {
     si: i32,
     env: Option<&'a HashMap<String, i32>>,
     brake: Option<&'a str>,
-    defintions: Option<&'a Vec<Definition>>
+    defintions: Option<&'a Vec<Definition>>,
+    func_mode: bool
 }
 
 impl<'a> ContextBuilder<'a> {
-    fn new(si: i32, env: &'a HashMap<String, i32>, brake: &'a str, defintions: &'a Vec<Definition>) -> Self {
+    fn new(si: i32, env: &'a HashMap<String, i32>, brake: &'a str, defintions: &'a Vec<Definition>, func_mode: bool) -> Self {
         Self {
             si,
             env: Some(env),
             brake: Some(brake),
-            defintions: Some(defintions)
+            defintions: Some(defintions),
+            func_mode
         }
     }
 
@@ -103,7 +106,8 @@ impl<'a> ContextBuilder<'a> {
             si: context.si,
             env: Some(context.env),
             brake: Some(context.brake),
-            defintions: Some(context.defintions)
+            defintions: Some(context.defintions),
+            func_mode: context.func_mode
         }
     }
 
@@ -112,7 +116,8 @@ impl<'a> ContextBuilder<'a> {
             si: self.si,
             env: self.env.expect("env is not set"),
             brake: self.brake.expect("brake is not set"),
-            defintions: self.defintions.expect("def not set")
+            defintions: self.defintions.expect("def not set"),
+            func_mode: self.func_mode
         }
     }
 }
@@ -129,7 +134,7 @@ pub fn compile_program(program: &Program) -> (String, String) {
     }
     let main = compile_expr_to_string(
         &program.main,
-        &ContextBuilder::new(0, &HashMap::new(), &String::from(""), &program.defs).build(),
+        &ContextBuilder::new(0, &HashMap::new(), &String::from(""), &program.defs, false).build(),
         &mut labels,
     );
     (defs, main)
@@ -150,7 +155,7 @@ fn compile_definition(d: &Definition, labels: &mut i32, definitions: &Vec<Defini
             }
             let body_instrs_as_str = compile_expr_to_string(
                 body,
-                &ContextBuilder::new(0, &env, &String::from(""), definitions).build(),
+                &ContextBuilder::new(0, &env, &String::from(""), definitions, true).build(),
                 labels,
             );
             format!(
@@ -213,7 +218,13 @@ fn compile_to_instrs(expr: &Expr, instrs: &mut Vec<Instr>, context: &Context, la
     match expr {
         Expr::Number(n) => instrs.push(Instr::IMov(Val::Reg(RAX), convert_i64_to_val(n))),
         Expr::Boolean(b) => instrs.push(Instr::IMov(Val::Reg(RAX), convert_bool_to_val(b))),
-        Expr::Id(s) if s == "input" => instrs.push(Instr::IMov(Val::Reg(RAX), Val::Reg(RDI))),
+        Expr::Id(s) if s == "input" => {
+            if ! context.func_mode {
+                instrs.push(Instr::IMov(Val::Reg(RAX), Val::Reg(RDI)))
+            } else {
+                panic!("Invalid function cannot use input")
+            }
+        },
         Expr::Id(id) => match context.env.contains_key(id) {
             true => instrs.push(Instr::IMov(
                 Val::Reg(RAX),

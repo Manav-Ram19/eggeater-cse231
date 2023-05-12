@@ -263,9 +263,7 @@ fn compile_func_call(
     // Call
     instrs.push(Instr::ICall(funcname.to_string()));
     // Restore rdi
-    if arg_exprs.len() > 0 {
-        instrs.push(Instr::IMov(Val::Reg(RDI), Val::RegOffset(RSP, cur_offset_to_new_loc)));
-    }
+    instrs.push(Instr::IMov(Val::Reg(RDI), Val::RegOffset(RSP, cur_offset_to_new_loc)));
     // Restore stack pointer
     instrs.push(Instr::IAdd(Val::Reg(RSP), Val::Imm(offset.into())));
 }

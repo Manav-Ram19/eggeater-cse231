@@ -333,7 +333,7 @@ fn compile_set(
     } else {
         compile_to_instrs(e, instrs, context, labels);
         instrs.push(Instr::IMov(
-            Val::RegOffset(RSP, 8 * (context.env.get(id).unwrap())),
+            Val::RegOffset(RSP, *context.env.get(id).unwrap()),
             Val::Reg(RAX),
         ));
     }

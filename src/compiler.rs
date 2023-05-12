@@ -120,7 +120,7 @@ pub fn compile_program(program: &Program) -> (String, String) {
     }
     let main = compile_expr_to_string(
         &program.main,
-        &ContextBuilder::new(2, &HashMap::new(), &String::from("")).build(),
+        &ContextBuilder::new(0, &HashMap::new(), &String::from("")).build(),
         &mut labels,
     );
     (defs, main)
@@ -132,19 +132,22 @@ fn compile_definition(d: &Definition, labels: &mut i32) -> String {
             let mut env = HashMap::new();
             let mut loc = 1;
             let depth = depth(body);
+/*             println!("{:?}", d); */
             for arg in args {
-                env.insert(arg.to_string(), depth + 8*loc);
+/*                 println!("arg: {} depth: {} loc: {}", arg, depth, loc); */
+                env.insert(arg.to_string(), 8*depth + 8*loc);
                 loc += 1;
             }
             let body_instrs_as_str = compile_expr_to_string(
                 body,
-                &ContextBuilder::new(2, &env, &String::from("")).build(),
+                &ContextBuilder::new(0, &env, &String::from("")).build(),
                 labels,
             );
             format!(
                 "{funcname}:
                 {body_instrs_as_str}
-                ret"
+                ret
+                "
             )
         }
     }
@@ -203,7 +206,7 @@ fn compile_to_instrs(expr: &Expr, instrs: &mut Vec<Instr>, context: &Context, la
         Expr::Id(id) => match context.env.contains_key(id) {
             true => instrs.push(Instr::IMov(
                 Val::Reg(RAX),
-                Val::RegOffset(RSP, 8 * (context.env.get(id).unwrap())),
+                Val::RegOffset(RSP, *context.env.get(id).unwrap()),
             )),
             false => panic!("Unbound variable identifier {id}"),
         },
@@ -233,21 +236,21 @@ fn compile_func_call(
 ) {
     let mut offset = 0;
     let mut new_si = context.si;
-    // Load args into stack after evaluating exprs
-    for arg_expr in arg_exprs {
-        // All params go into stack in decreasing address order, except for last param which stays in RAX
-        if offset != 0 {
+    if arg_exprs.len() > 0 {
+        for arg_expr in arg_exprs.iter().take(arg_exprs.len()-1) {
+            compile_to_instrs(arg_expr, instrs, &ContextBuilder::from(context).si(new_si).build(), labels);
             instrs.push(Instr::IMov(Val::RegOffset(RSP, offset), Val::Reg(RAX)));
+            offset += 8;
+            new_si = new_si + 1;
         }
-        compile_to_instrs(arg_expr, instrs, &ContextBuilder::from(context).si(new_si).build(), labels);
+        compile_to_instrs(arg_exprs.get(arg_exprs.len()-1).unwrap(), instrs, &ContextBuilder::from(context).si(new_si).build(), labels);
         offset += 8;
-        new_si = new_si + 1;
     }
+    // for rdi
     offset += 8;
-    // Move RSP to new location
     instrs.push(Instr::ISub(Val::Reg(RSP), Val::Imm(offset.into())));
     // Move args in stack to be near new RSP location
-    let mut cur_offset_to_old_loc = offset + 8;
+    let mut cur_offset_to_old_loc = offset;
     let mut cur_offset_to_new_loc = 0;
     if arg_exprs.len() > 0 {
         for _ in arg_exprs.iter().take(arg_exprs.len()-1) {
@@ -426,10 +429,10 @@ fn compile_unop(op: &Op1, e: &Expr, instrs: &mut Vec<Instr>, context: &Context, 
         Op1::Print => {
             let offset = 8 * (context.si + 1 + (context.si % 2));
             instrs.push(Instr::ISub(Val::Reg(RSP), Val::Imm(offset.into())));
-            instrs.push(Instr::IMov(Val::Reg(RSP), Val::Reg(RDI)));
+            instrs.push(Instr::IMov(Val::RegOffset(RSP, 0), Val::Reg(RDI)));
             instrs.push(Instr::IMov(Val::Reg(RDI), Val::Reg(RAX)));
             instrs.push(Instr::ICall(PRINT_LABEL.to_string()));
-            instrs.push(Instr::IMov(Val::Reg(RDI), Val::Reg(RSP)));
+            instrs.push(Instr::IMov(Val::Reg(RDI), Val::RegOffset(RSP, 0)));
             instrs.push(Instr::IAdd(Val::Reg(RSP), Val::Imm(offset.into())));
         }
     }

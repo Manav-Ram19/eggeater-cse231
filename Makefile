@@ -7,6 +7,8 @@ ifeq ($(UNAME), Darwin)
 ARCH := macho64
 endif
 
+.PRECIOUS: test/%.s
+
 tests/%.s: tests/%.snek src/main.rs
 	cargo run -- $< tests/$*.s
 

@@ -6,7 +6,10 @@ use crate::constants::*;
 /**
  * Reserved words that cannot be used for identifier names
  */
-const RESERVED_WORDS: &'static [&str] = &["true", "false","add1", "sub1", "isnum", "isbool","let", "block", "set!", "if", "break", "set!", "loop","+", "-", "*", "=", ">", ">=", "<", "<=", "input", "print"];
+const RESERVED_WORDS: &'static [&str] = &[
+    "true", "false", "add1", "sub1", "isnum", "isbool", "let", "block", "set!", "if", "break",
+    "set!", "loop", "+", "-", "*", "=", ">", ">=", "<", "<=", "input", "print",
+];
 
 /**
  * Converts the contents of the input program into a Program AST following the abstract syntax
@@ -41,7 +44,7 @@ fn parse_program_into_ast(s: &Sexp) -> Program {
             }
             panic!("Invalid Only found definitions");
         }
-        _ => panic!("Invalid Program should be a list")
+        _ => panic!("Invalid Program should be a list"),
     }
 }
 
@@ -52,9 +55,9 @@ fn is_function_definition(s: &Sexp) -> bool {
     match s {
         Sexp::List(vec) => match &vec[..] {
             [Sexp::Atom(S(keyword)), Sexp::List(_), _] if keyword == "fun" => true,
-            _ => false
+            _ => false,
         },
-        _ => false
+        _ => false,
     }
 }
 
@@ -65,14 +68,22 @@ fn is_function_definition(s: &Sexp) -> bool {
 fn parse_sexp_into_func_def(s: &Sexp) -> Definition {
     match s {
         Sexp::List(def_vec) => match &def_vec[..] {
-            [Sexp::Atom(S(keyword)), Sexp::List(name_vec), body] if keyword == "fun" => match name_vec.len() {
-                0 => panic!("Invalid Cannot create a function definiton without a function name."),
-                _ => {
-                    match name_vec.len() {
-                        _ => Definition::Func(name_vec[0].to_string(), name_vec.iter().skip(0).map(|name_as_sexpr| name_as_sexpr.to_string()).collect(), parse_sexp_into_expr(body))
-                    }
+            [Sexp::Atom(S(keyword)), Sexp::List(name_vec), body] if keyword == "fun" => {
+                match name_vec.len() {
+                    0 => panic!(
+                        "Invalid Cannot create a function definiton without a function name."
+                    ),
+                    _  => Definition::Func(
+                            name_vec[0].to_string(),
+                            name_vec
+                                .iter()
+                                .skip(1)
+                                .map(|name_as_sexpr| name_as_sexpr.to_string())
+                                .collect(),
+                            parse_sexp_into_expr(body),
+                        )
                 }
-            },
+            }
             _ => panic!("Invalid Not a function definition"),
         },
         _ => panic!("Invalid Not a function definition"),
@@ -85,30 +96,32 @@ fn parse_sexp_into_func_def(s: &Sexp) -> Definition {
 fn parse_sexp_into_expr(s: &Sexp) -> Expr {
     match s {
         Sexp::Atom(s) => parse_sexpr_atom(s),
-        Sexp::List(vec) => {
-            match &vec[..] {
-                [Sexp::Atom(S(op)), e] if op == "add1" => parse_unop_expr(Op1::Add1, e),
-                [Sexp::Atom(S(op)), e] if op == "sub1" => parse_unop_expr(Op1::Sub1, e),
-                [Sexp::Atom(S(op)), e] if op == "isnum" => parse_unop_expr(Op1::IsNum, e),
-                [Sexp::Atom(S(op)), e] if op == "isbool" => parse_unop_expr(Op1::IsBool, e),
-                [Sexp::Atom(S(op)), e] if op == "print" => parse_unop_expr(Op1::Print, e),
-                [Sexp::Atom(S(op)), e1, e2] if op == "+" => parse_binop_expr(Op2::Plus, e1, e2),
-                [Sexp::Atom(S(op)), e1, e2] if op == "-" => parse_binop_expr(Op2::Minus, e1, e2),
-                [Sexp::Atom(S(op)), e1, e2] if op == "*" => parse_binop_expr(Op2::Times, e1, e2),
-                [Sexp::Atom(S(op)), e1, e2] if op == "<" => parse_binop_expr(Op2::Less, e1, e2),
-                [Sexp::Atom(S(op)), e1, e2] if op == ">" => parse_binop_expr(Op2::Greater, e1, e2),
-                [Sexp::Atom(S(op)), e1, e2] if op == "=" => parse_binop_expr(Op2::Equal, e1, e2),
-                [Sexp::Atom(S(op)), e1, e2] if op == "<=" => parse_binop_expr(Op2::LessEqual, e1, e2),
-                [Sexp::Atom(S(op)), e1, e2] if op == ">=" => parse_binop_expr(Op2::GreaterEqual, e1, e2),
-                [Sexp::Atom(S(op)),Sexp::List(bindings), body] if op == "let" => parse_let_expr(bindings, body),
-                [Sexp::Atom(S(op)), Sexp::Atom(S(id)), e] if op == "set!" => parse_set_expr(id, e),
-                [Sexp::Atom(S(op)), cond, then, els] if op == "if" =>  parse_if_expr(cond, then, els),
-                [Sexp::Atom(S(op)), exprs @ ..] if op == "block" => parse_block_operation(exprs),
-                [Sexp::Atom(S(op)), e] if op == "loop" => parse_loop_expr(e),
-                [Sexp::Atom(S(op)), e] if op == "break" => parse_break_expr(e),
-                [Sexp::Atom(S(funcname)), exprs @ ..] => parse_call(funcname, exprs),
-                _ => panic!("Invalid Sexpr format: {s}")
+        Sexp::List(vec) => match &vec[..] {
+            [Sexp::Atom(S(op)), e] if op == "add1" => parse_unop_expr(Op1::Add1, e),
+            [Sexp::Atom(S(op)), e] if op == "sub1" => parse_unop_expr(Op1::Sub1, e),
+            [Sexp::Atom(S(op)), e] if op == "isnum" => parse_unop_expr(Op1::IsNum, e),
+            [Sexp::Atom(S(op)), e] if op == "isbool" => parse_unop_expr(Op1::IsBool, e),
+            [Sexp::Atom(S(op)), e] if op == "print" => parse_unop_expr(Op1::Print, e),
+            [Sexp::Atom(S(op)), e1, e2] if op == "+" => parse_binop_expr(Op2::Plus, e1, e2),
+            [Sexp::Atom(S(op)), e1, e2] if op == "-" => parse_binop_expr(Op2::Minus, e1, e2),
+            [Sexp::Atom(S(op)), e1, e2] if op == "*" => parse_binop_expr(Op2::Times, e1, e2),
+            [Sexp::Atom(S(op)), e1, e2] if op == "<" => parse_binop_expr(Op2::Less, e1, e2),
+            [Sexp::Atom(S(op)), e1, e2] if op == ">" => parse_binop_expr(Op2::Greater, e1, e2),
+            [Sexp::Atom(S(op)), e1, e2] if op == "=" => parse_binop_expr(Op2::Equal, e1, e2),
+            [Sexp::Atom(S(op)), e1, e2] if op == "<=" => parse_binop_expr(Op2::LessEqual, e1, e2),
+            [Sexp::Atom(S(op)), e1, e2] if op == ">=" => {
+                parse_binop_expr(Op2::GreaterEqual, e1, e2)
             }
+            [Sexp::Atom(S(op)), Sexp::List(bindings), body] if op == "let" => {
+                parse_let_expr(bindings, body)
+            }
+            [Sexp::Atom(S(op)), Sexp::Atom(S(id)), e] if op == "set!" => parse_set_expr(id, e),
+            [Sexp::Atom(S(op)), cond, then, els] if op == "if" => parse_if_expr(cond, then, els),
+            [Sexp::Atom(S(op)), exprs @ ..] if op == "block" => parse_block_operation(exprs),
+            [Sexp::Atom(S(op)), e] if op == "loop" => parse_loop_expr(e),
+            [Sexp::Atom(S(op)), e] if op == "break" => parse_break_expr(e),
+            [Sexp::Atom(S(funcname)), exprs @ ..] => parse_call(funcname, exprs),
+            _ => panic!("Invalid Sexpr format: {s}"),
         },
     }
 }
@@ -124,7 +137,11 @@ fn parse_unop_expr(op: Op1, e: &Sexp) -> Expr {
  * Parse binary operator expressions
  */
 fn parse_binop_expr(op: Op2, e1: &Sexp, e2: &Sexp) -> Expr {
-    Expr::BinOp(op, Box::new(parse_sexp_into_expr(e1)), Box::new(parse_sexp_into_expr(e2)))
+    Expr::BinOp(
+        op,
+        Box::new(parse_sexp_into_expr(e1)),
+        Box::new(parse_sexp_into_expr(e2)),
+    )
 }
 
 /**
@@ -154,20 +171,24 @@ fn parse_bind(sexp: &Sexp) -> (String, Expr) {
                 if RESERVED_WORDS.contains(&&s[..]) {
                     panic!("Invalid identifier name: {s} since it is a keyword.");
                 } else {
-                   (s.to_string(), parse_sexp_into_expr(e))
+                    (s.to_string(), parse_sexp_into_expr(e))
                 }
-            },
+            }
             _ => panic!("Invalid binding format"),
-        }
+        },
         _ => panic!("Invalid let binding"),
     }
-  }
+}
 
 /**
  * Parse If expressions
  */
 fn parse_if_expr(cond: &Sexp, then: &Sexp, els: &Sexp) -> Expr {
-    Expr::If(Box::new(parse_sexp_into_expr(cond)), Box::new(parse_sexp_into_expr(then)), Box::new(parse_sexp_into_expr(els)))
+    Expr::If(
+        Box::new(parse_sexp_into_expr(cond)),
+        Box::new(parse_sexp_into_expr(then)),
+        Box::new(parse_sexp_into_expr(els)),
+    )
 }
 
 /**
@@ -177,7 +198,7 @@ fn parse_if_expr(cond: &Sexp, then: &Sexp, els: &Sexp) -> Expr {
 fn parse_set_expr(id: &str, e: &Sexp) -> Expr {
     match RESERVED_WORDS.contains(&id) {
         true => panic!("Invalid identifier in set operation: {id}, which is a keyword"),
-        false => Expr::Set(id.to_string(), Box::new(parse_sexp_into_expr(e)))
+        false => Expr::Set(id.to_string(), Box::new(parse_sexp_into_expr(e))),
     }
 }
 
@@ -195,7 +216,12 @@ fn parse_loop_expr(e: &Sexp) -> Expr {
 fn parse_block_operation(exprs: &[Sexp]) -> Expr {
     match exprs.is_empty() {
         true => panic!("Invalid empty block"),
-        false => Expr::Block(exprs.iter().map(|expression| parse_sexp_into_expr(expression)).collect())
+        false => Expr::Block(
+            exprs
+                .iter()
+                .map(|expression| parse_sexp_into_expr(expression))
+                .collect(),
+        ),
     }
 }
 
@@ -226,7 +252,13 @@ fn parse_call(funcname: &String, exprs: &[Sexp]) -> Expr {
     if RESERVED_WORDS.contains(&&funcname[..]) {
         panic!("Invalid usage of expression: {funcname}")
     }
-    Expr::Call(funcname.to_string(), exprs.into_iter().map(|sexp| parse_sexp_into_expr(sexp)).collect())
+    Expr::Call(
+        funcname.to_string(),
+        exprs
+            .into_iter()
+            .map(|sexp| parse_sexp_into_expr(sexp))
+            .collect(),
+    )
 }
 
 /**

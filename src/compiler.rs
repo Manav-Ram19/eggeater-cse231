@@ -524,13 +524,13 @@ fn compile_binop(
 
             // Check if RAX hold a heap address
             assert_heap_address(instrs);
+            // Copy index from RSP + 8*context.si into RBX and check if it is a number
+            instrs.push(Instr::IMov(Val::Reg(RBX), Val::StaticRegOffset(RSP, 8*context.si)));
+            assert_num(instrs, Val::Reg(RBX));
             // Check if it is nil and throw out of bounds
             instrs.push(Instr::ICmp(Val::Reg(RAX), Val::Imm(1)));
             instrs.push(Instr::IMov(Val::Reg(RBX), Val::Imm(OUT_OF_BOUNDS_ERROR_CODE)));
             instrs.push(Instr::IJe(ERROR_LABEL.to_string()));
-            // Copy index from RSP + 8*context.si into RBX and check if it is a number
-            instrs.push(Instr::IMov(Val::Reg(RBX), Val::StaticRegOffset(RSP, 8*context.si)));
-            assert_num(instrs, Val::Reg(RBX));
             // Throw runtime error if index is less than 0
             instrs.push(Instr::IMov(Val::Reg(RBX), Val::StaticRegOffset(RSP, 8*context.si)));
             instrs.push(Instr::ICmp(Val::Reg(RBX), Val::Imm(0)));

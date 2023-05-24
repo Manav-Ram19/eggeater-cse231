@@ -1,3 +1,0 @@
-(fun (double x y) (+ x y))
-
-(double input 3)

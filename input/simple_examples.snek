@@ -1,0 +1,31 @@
+(fun (tuplemaker single) (tuple single))
+(
+    block
+    (print (tuple 3))
+    (print (tuple -1 5))
+    (print (tuple -1 true 4 false))
+    (print (let ((x (tuple 100 70 true (+ 5 5)))) x))
+    (print (let ((x (tuple (tuple 3)))) x))
+    (print (let ((x (tuple 3 (tuple 1 (tuple 100) (tuple true false 3 4))))) x))
+    (
+        let (
+            (x (tuple (tuple 1) (tuple (tuple 3 4) 5 (tuple 6 7)))) 
+            (y (tuple true input 3 false))
+            (z (tuple y x))
+            )
+
+        (
+            block
+            (print x)
+            (print (index x 1))
+            (print (index (index x 1) 2))
+            (print (index (index (index x 1) 0) 1))
+            (print (= (index (index (index x 1) 0) 0) (index y 2)))
+            (print (= x (index z 1)))
+            (print (= y (tuple true input 3 false)))
+            (print (= y nil))
+            (print (tuplemaker 10))
+            (isbool (tuple 3))
+        )
+    )
+)

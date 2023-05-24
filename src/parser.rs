@@ -10,7 +10,7 @@ use crate::constants::*;
  */
 const RESERVED_WORDS: &'static [&str] = &[
     "true", "false", "add1", "sub1", "isnum", "isbool", "let", "block", "set!", "if", "break",
-    "set!", "loop", "+", "-", "*", "=", ">", ">=", "<", "<=", "input", "print",
+    "set!", "loop", "+", "-", "*", "=", ">", ">=", "<", "<=", "input", "print", "tuple", "index", "nil"
 ];
 
 /**
@@ -120,6 +120,7 @@ fn parse_sexp_into_expr(s: &Sexp) -> Expr {
     match s {
         Sexp::Atom(s) => parse_sexpr_atom(s),
         Sexp::List(vec) => match &vec[..] {
+            [Sexp::Atom(S(op)), exprs@..] if op == "tuple" => parse_tuple(exprs),
             [Sexp::Atom(S(op)), e] if op == "add1" => parse_unop_expr(Op1::Add1, e),
             [Sexp::Atom(S(op)), e] if op == "sub1" => parse_unop_expr(Op1::Sub1, e),
             [Sexp::Atom(S(op)), e] if op == "isnum" => parse_unop_expr(Op1::IsNum, e),
@@ -132,6 +133,7 @@ fn parse_sexp_into_expr(s: &Sexp) -> Expr {
             [Sexp::Atom(S(op)), e1, e2] if op == ">" => parse_binop_expr(Op2::Greater, e1, e2),
             [Sexp::Atom(S(op)), e1, e2] if op == "=" => parse_binop_expr(Op2::Equal, e1, e2),
             [Sexp::Atom(S(op)), e1, e2] if op == "<=" => parse_binop_expr(Op2::LessEqual, e1, e2),
+            [Sexp::Atom(S(op)), e1, e2] if op == "index" => parse_binop_expr(Op2::Index, e1, e2),
             [Sexp::Atom(S(op)), e1, e2] if op == ">=" => {
                 parse_binop_expr(Op2::GreaterEqual, e1, e2)
             }
@@ -146,6 +148,24 @@ fn parse_sexp_into_expr(s: &Sexp) -> Expr {
             [Sexp::Atom(S(funcname)), exprs @ ..] => parse_call(funcname, exprs),
             _ => panic!("Invalid Sexpr format: {s}"),
         },
+    }
+}
+
+/**
+ * Parses tuple definition expressions
+ */
+fn parse_tuple(exprs: &[Sexp]) -> Expr {
+    if exprs.is_empty() {
+        panic!("Invalid empty tuple");
+    } else if exprs.len() as i64 > INT_MAX {
+        panic!("Invalid attempting to create tuple with too many elements")
+    } else {
+        Expr::Tuple(
+            exprs
+                    .iter()
+                    .map(|expression| parse_sexp_into_expr(expression))
+                    .collect()
+        )
     }
 }
 
@@ -289,7 +309,7 @@ fn parse_call(funcname: &String, exprs: &[Sexp]) -> Expr {
  * Panics if a reserved word is being used for the identifier
  */
 fn parse_id(s: &str) -> Expr {
-    match s == "input" || !RESERVED_WORDS.contains(&s) {
+    match s == "input" || s == "nil" || !RESERVED_WORDS.contains(&s) {
         true => Expr::Id(s.to_string()),
         false => panic!("Invalid identifier name since it is a reserved word: {s}"),
     }

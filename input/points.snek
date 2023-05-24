@@ -1,0 +1,18 @@
+(fun (createPoint x y) 
+    (tuple x y)
+)
+
+(fun (addPoints point1 point2) 
+    (tuple (+ (index point1 0) (index point2 0)) (+ (index point1 1) (index point2 1)))
+)
+
+(
+    block
+    (print (createPoint 1 2))
+    (print (createPoint -1 0))
+    (print (createPoint -1 -200))
+    (print (addPoints (createPoint 1 2) (createPoint 3 -1)))
+    (print (addPoints (addPoints (createPoint 1 2) (createPoint 3 -1)) (createPoint 100 150)))
+    (print (addPoints (addPoints (createPoint 1 2) (createPoint 3 -1)) (addPoints (createPoint 2 50) (createPoint 7 3))))
+    (addPoints (addPoints (addPoints (createPoint 1 2) (createPoint 3 -1)) (addPoints (createPoint 2 50) (createPoint 7 3))) (createPoint 1 2))
+)

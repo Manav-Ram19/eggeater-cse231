@@ -42,7 +42,8 @@ pub enum Expr {
     Block(Vec<Expr>),
     Loop(Box<Expr>),
     Break(Box<Expr>),
-    Call(String, Vec<Expr>)
+    Call(String, Vec<Expr>),
+    Tuple(Vec<Expr>)
 }
 
 /**
@@ -69,5 +70,6 @@ pub enum Op2 {
     Greater, 
     GreaterEqual, 
     Less, 
-    LessEqual
+    LessEqual,
+    Index // Index e1 e2 -> Returns element at index e2 in tuple e1
 }

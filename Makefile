@@ -9,6 +9,14 @@ endif
 
 .PRECIOUS: test/%.s
 
+input/%.s: input/%.snek src/main.rs
+	cargo run -- $< input/$*.s
+
+input/%.run: input/%.s runtime/start.rs
+	nasm -f $(ARCH) input/$*.s -o input/$*.o
+	ar rcs input/lib$*.a input/$*.o
+	rustc -L input/ -lour_code:$* runtime/start.rs -o input/$*.run
+
 tests/%.s: tests/%.snek src/main.rs
 	cargo run -- $< tests/$*.s
 
@@ -24,3 +32,4 @@ test:
 
 clean:
 	rm -f tests/*.a tests/*.s tests/*.run tests/*.o
+	rm -f input/*.a input/*.s input/*.run input/*.o

@@ -1,0 +1,112 @@
+(fun (createNode curVal leftNode rightNode) (tuple curVal leftNode rightNode))
+
+(fun (getValFromNode node) (index node 0))
+
+(fun (getRightTree node) (index node 2))
+
+(fun (getLeftTree node) (index node 1))
+
+(fun (insertIntoBST bst elem) 
+    (
+        if (= bst nil) 
+        (createNode elem nil nil)
+        (
+            if (> elem (getValFromNode bst))
+            (createNode (getValFromNode bst) (getLeftTree bst) (insertIntoBST (getRightTree bst) elem))
+            (
+                if (< elem (getValFromNode bst))
+                (createNode (getValFromNode bst) (insertIntoBST (getLeftTree bst) elem) (getRightTree bst))
+                bst
+            )
+        )
+    )
+)
+
+(fun (findInBST bst elem) 
+    (
+        if (= bst nil) 
+        false
+        (
+            if (> elem (getValFromNode bst))
+            (findInBST (getRightTree bst) elem)
+            (
+                if (< elem (getValFromNode bst))
+                (findInBST (getLeftTree bst) elem)
+                true
+            )
+        )
+    )
+)
+
+(fun (createBST rootVal) (createNode rootVal nil nil))
+
+(
+    block
+    (
+        let ((linked_list_tree (createBST 1)))
+        (
+            block
+            (set! linked_list_tree (insertIntoBST linked_list_tree 2))
+            (set! linked_list_tree (insertIntoBST linked_list_tree 3))
+            (set! linked_list_tree (insertIntoBST linked_list_tree 4))
+            (set! linked_list_tree (insertIntoBST linked_list_tree 5))
+            (set! linked_list_tree (insertIntoBST linked_list_tree 6))
+            (set! linked_list_tree (insertIntoBST linked_list_tree 7))
+            (print linked_list_tree)
+        )
+    )
+    (
+        let ((right_kink_tree (createBST 5)))
+        (
+            block
+            (set! right_kink_tree (insertIntoBST right_kink_tree 2))
+            (set! right_kink_tree (insertIntoBST right_kink_tree 3))
+            (print right_kink_tree)
+        )
+    )
+    (
+        let ((left_kink_tree (createBST -1)))
+        (
+            block
+            (set! left_kink_tree (insertIntoBST left_kink_tree 10))
+            (set! left_kink_tree (insertIntoBST left_kink_tree 5))
+            (print left_kink_tree)
+        )
+    )
+    (
+        let ((duplicate_node_tree (createBST 10)))
+        (
+            block
+            (set! duplicate_node_tree (insertIntoBST duplicate_node_tree 5))
+            (set! duplicate_node_tree (insertIntoBST duplicate_node_tree 11))
+            (set! duplicate_node_tree (insertIntoBST duplicate_node_tree 5))
+            (print duplicate_node_tree)
+        )
+    )
+    (
+        let ((root_node_tree (createBST 10)))
+        (
+            block
+            (print root_node_tree)
+        )
+    )
+    (
+        let ((regular_bst (createBST 10)))
+        (
+            block
+            (set! regular_bst (insertIntoBST regular_bst 5))
+            (set! regular_bst (insertIntoBST regular_bst 12))
+            (set! regular_bst (insertIntoBST regular_bst 4))
+            (set! regular_bst (insertIntoBST regular_bst 6))
+            (set! regular_bst (insertIntoBST regular_bst 11))
+            (set! regular_bst (insertIntoBST regular_bst 15))
+            (print regular_bst)
+            (print (findInBST regular_bst 6))
+            (print (findInBST regular_bst 12))
+            (print (findInBST regular_bst 9))
+            (set! regular_bst (insertIntoBST regular_bst 9))
+            (print regular_bst)
+            (findInBST regular_bst 9)
+        )
+    )
+)

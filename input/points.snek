@@ -3,7 +3,7 @@
 )
 
 (fun (addPoints point1 point2) 
-    (tuple (+ (index point1 0) (index point2 0)) (+ (index point1 1) (index point2 1)))
+    (tuple (+ (tuple-get point1 0) (tuple-get point2 0)) (+ (tuple-get point1 1) (tuple-get point2 1)))
 )
 
 (

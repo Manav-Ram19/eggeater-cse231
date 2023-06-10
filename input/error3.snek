@@ -1,1 +1,1 @@
-(index (tuple 4 5) true)
+(tuple-get (tuple 4 5) true)

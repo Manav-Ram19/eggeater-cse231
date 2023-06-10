@@ -7,6 +7,7 @@ use crate::error::*;
 
 pub const ERROR_LABEL: &str = "throw_error";
 pub const PRINT_LABEL: &str = "snek_print";
+pub const STRUCT_EQ_LABEL: &str = "snek_struct_eq";
 
 #[derive(Debug, Copy, Clone)]
 enum Val {
@@ -30,7 +31,9 @@ enum Reg {
     RSP,
     RDI,
     RBX,
-    R15
+    R15,
+    RCX,
+    RSI
 }
 
 use Reg::*;
@@ -214,6 +217,7 @@ fn depth(e: &Expr) -> i64 {
             .map(|(index, expr)| depth(expr) + index as i64)
             .max()
             .unwrap_or(0),
+        Expr::TupleSet(tup, ind, val) => depth(val).max(depth(ind)+1).max(depth(tup)+2) // so that tup is in RAX
     }
 }
 
@@ -269,7 +273,47 @@ fn compile_to_instrs(expr: &Expr, instrs: &mut Vec<Instr>, context: &Context, la
             compile_func_call(funcname, arg_exprs, instrs, context, labels)
         }
         Expr::Tuple(elem_exprs) => compile_tuple(elem_exprs, instrs, context, labels),
+        Expr::TupleSet(tuple_expr, index_expr, new_val_expr) => compile_tuple_set(tuple_expr, index_expr, new_val_expr, instrs, context, labels),
     }
+}
+
+fn compile_tuple_set(tuple_expr: &Expr, index_expr: &Expr, new_val_expr: &Expr, instrs: &mut Vec<Instr>, context: &Context, labels: &mut i64) {
+    compile_to_instrs(new_val_expr, instrs, context, labels);
+    instrs.push(Instr::IMov(Val::StaticRegOffset(RSP, context.si*8), Val::Reg(RAX)));
+
+    compile_to_instrs(index_expr, instrs, &ContextBuilder::from(context).si(context.si+1).build(), labels);
+    instrs.push(Instr::IMov(Val::StaticRegOffset(RSP, 8+context.si*8), Val::Reg(RAX)));
+
+    compile_to_instrs(tuple_expr, instrs, &ContextBuilder::from(context).si(context.si+2).build(), labels);
+
+    assert_heap_address(instrs);
+
+    instrs.push(Instr::IMov(Val::Reg(RBX), Val::StaticRegOffset(RSP, 8+context.si*8)));
+    assert_num(instrs, Val::Reg(RBX));
+
+    // OOB error for nil object
+    instrs.push(Instr::ICmp(Val::Reg(RAX), Val::Imm(1)));
+    instrs.push(Instr::IMov(Val::Reg(RBX), Val::Imm(OUT_OF_BOUNDS_ERROR_CODE)));
+    instrs.push(Instr::IJe(ERROR_LABEL.to_string()));
+    // OOB for less than 0 index
+    instrs.push(Instr::IMov(Val::Reg(RBX), Val::StaticRegOffset(RSP, 8+context.si*8)));    
+    instrs.push(Instr::ICmp(Val::Reg(RBX), Val::Imm(0)));
+    instrs.push(Instr::IMov(Val::Reg(RBX), Val::Imm(OUT_OF_BOUNDS_ERROR_CODE)));
+    instrs.push(Instr::IJl(ERROR_LABEL.to_string()));
+    // OOB for greater than or equal to length index
+    instrs.push(Instr::IMov(Val::Reg(RBX), Val::StaticRegOffset(RSP, 8+context.si*8)));
+    instrs.push(Instr::ICmp(Val::Reg(RBX), Val::StaticRegOffset(RAX, -1)));
+    instrs.push(Instr::IMov(Val::Reg(RBX), Val::Imm(OUT_OF_BOUNDS_ERROR_CODE)));
+    instrs.push(Instr::IJge(ERROR_LABEL.to_string()));
+    // Move element from heap at index location into rax
+    instrs.push(Instr::IMov(Val::Reg(RCX), Val::StaticRegOffset(RSP, 8*context.si))); // RCX holds new val
+    instrs.push(Instr::IMov(Val::Reg(RBX), Val::StaticRegOffset(RSP, 8+context.si*8))); // RBX holds index
+    instrs.push(Instr::ISar(Val::Reg(RBX), Val::Imm(1))); // Shift the index to the right to get the "correct index value"
+    instrs.push(Instr::IAdd(Val::Reg(RBX), Val::Imm(1))); // Add in for metadata
+    instrs.push(Instr::IMul(Val::Reg(RBX), Val::Imm(8))); // Calculate actual heap offset
+    instrs.push(Instr::ISub(Val::Reg(RAX), Val::Imm(1))); // temporary mangle due to type
+    instrs.push(Instr::IMov(Val::DynamicRegOffset(RAX, RBX), Val::Reg(RCX)));
+    instrs.push(Instr::IAdd(Val::Reg(RAX), Val::Imm(1))); // Add back 1 to insert the type for the heap address
 }
 
 fn compile_tuple(
@@ -519,7 +563,7 @@ fn compile_binop(
             ));
             check_for_overflow(instrs);
         }
-        Op2::Index => {
+        Op2::TupleGet => {
             /* tuple is in RAX, index is in RSP + 8*context.si */
 
             // Check if RAX hold a heap address
@@ -548,6 +592,17 @@ fn compile_binop(
             instrs.push(Instr::IMul(Val::Reg(RBX), Val::Imm(8))); // Calculate actual heap offset
             instrs.push(Instr::ISub(Val::Reg(RAX), Val::Imm(1))); // mangle due to type
             instrs.push(Instr::IMov(Val::Reg(RAX), Val::DynamicRegOffset(RAX, RBX)));
+        }
+        Op2::StructEqual => {
+            /* arg1 is in RAX, arg2 is in RSP + 8*context.si */
+            instrs.push(Instr::IMov(Val::Reg(RSI), Val::StaticRegOffset(RSP, 8*context.si)));
+            let offset = 8 * (context.si + 1 + (context.si % 2));
+            instrs.push(Instr::ISub(Val::Reg(RSP), Val::Imm(offset.into())));
+            instrs.push(Instr::IMov(Val::StaticRegOffset(RSP, 0), Val::Reg(RDI)));
+            instrs.push(Instr::IMov(Val::Reg(RDI), Val::Reg(RAX)));
+            instrs.push(Instr::ICall(STRUCT_EQ_LABEL.to_string()));
+            instrs.push(Instr::IMov(Val::Reg(RDI), Val::StaticRegOffset(RSP, 0)));
+            instrs.push(Instr::IAdd(Val::Reg(RSP), Val::Imm(offset.into())));
         }
         _ => compile_conditional_binop(op, instrs, context, labels),
     }
@@ -842,5 +897,7 @@ fn reg_to_str(r: &Reg) -> String {
         RDI => "rdi".to_string(),
         RBX => "rbx".to_string(),
         R15 => "r15".to_string(),
+        RCX => "rcx".to_string(),
+        RSI => "rsi".to_string()
     }
 }

@@ -43,7 +43,8 @@ pub enum Expr {
     Loop(Box<Expr>),
     Break(Box<Expr>),
     Call(String, Vec<Expr>),
-    Tuple(Vec<Expr>)
+    Tuple(Vec<Expr>),
+    TupleSet(Box<Expr>, Box<Expr>, Box<Expr>) // tuple index new_val
 }
 
 /**
@@ -71,5 +72,6 @@ pub enum Op2 {
     GreaterEqual, 
     Less, 
     LessEqual,
-    Index // Index e1 e2 -> Returns element at index e2 in tuple e1
+    TupleGet, // TupleGet e1 e2 -> Returns element at index e2 in tuple e1
+    StructEqual // Check for structural equality
 }

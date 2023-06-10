@@ -1,1 +1,1 @@
-(index (tuple 3 7) 2)
+(tuple-get (tuple 3 7) 2)

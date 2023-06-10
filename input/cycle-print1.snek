@@ -1,0 +1,14 @@
+(
+    let ((y (tuple 1 0)) (x (tuple y y)))
+    (
+        block
+        (print x)
+        (tuple-set! x 0 x)
+        (print x)
+        (tuple-set! x 1 true)
+        (print x)
+        (tuple-set! (tuple-get x 0) 1 false)
+        (print x)
+        (tuple-set! (tuple-get x 0) 0 3)
+    )
+)

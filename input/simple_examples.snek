@@ -17,11 +17,11 @@
         (
             block
             (print x)
-            (print (index x 1))
-            (print (index (index x 1) 2))
-            (print (index (index (index x 1) 0) 1))
-            (print (= (index (index (index x 1) 0) 0) (index y 2)))
-            (print (= x (index z 1)))
+            (print (tuple-get x 1))
+            (print (tuple-get (tuple-get x 1) 2))
+            (print (tuple-get (tuple-get (tuple-get x 1) 0) 1))
+            (print (= (tuple-get (tuple-get (tuple-get x 1) 0) 0) (tuple-get y 2)))
+            (print (= x (tuple-get z 1)))
             (print (= y (tuple true input 3 false)))
             (print (= y nil))
             (print (tuplemaker 10))

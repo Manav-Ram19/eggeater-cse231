@@ -10,7 +10,8 @@ use crate::constants::*;
  */
 const RESERVED_WORDS: &'static [&str] = &[
     "true", "false", "add1", "sub1", "isnum", "isbool", "let", "block", "set!", "if", "break",
-    "set!", "loop", "+", "-", "*", "=", ">", ">=", "<", "<=", "input", "print", "tuple", "index", "nil"
+    "set!", "loop", "+", "-", "*", "=", ">", ">=", "<", "<=", "input", "print", "tuple-get", "nil",
+    "tuple-set!", "deep-equal"
 ];
 
 /**
@@ -132,8 +133,9 @@ fn parse_sexp_into_expr(s: &Sexp) -> Expr {
             [Sexp::Atom(S(op)), e1, e2] if op == "<" => parse_binop_expr(Op2::Less, e1, e2),
             [Sexp::Atom(S(op)), e1, e2] if op == ">" => parse_binop_expr(Op2::Greater, e1, e2),
             [Sexp::Atom(S(op)), e1, e2] if op == "=" => parse_binop_expr(Op2::Equal, e1, e2),
+            [Sexp::Atom(S(op)), e1, e2] if op == "deep-equal" => parse_binop_expr(Op2::StructEqual, e1, e2),
             [Sexp::Atom(S(op)), e1, e2] if op == "<=" => parse_binop_expr(Op2::LessEqual, e1, e2),
-            [Sexp::Atom(S(op)), e1, e2] if op == "index" => parse_binop_expr(Op2::Index, e1, e2),
+            [Sexp::Atom(S(op)), e1, e2] if op == "tuple-get" => parse_binop_expr(Op2::TupleGet, e1, e2),
             [Sexp::Atom(S(op)), e1, e2] if op == ">=" => {
                 parse_binop_expr(Op2::GreaterEqual, e1, e2)
             }
@@ -145,10 +147,18 @@ fn parse_sexp_into_expr(s: &Sexp) -> Expr {
             [Sexp::Atom(S(op)), exprs @ ..] if op == "block" => parse_block_operation(exprs),
             [Sexp::Atom(S(op)), e] if op == "loop" => parse_loop_expr(e),
             [Sexp::Atom(S(op)), e] if op == "break" => parse_break_expr(e),
+            [Sexp::Atom(S(op)), tup, ind, val] if op == "tuple-set!" => parse_tuple_set_expr(tup, ind, val),
             [Sexp::Atom(S(funcname)), exprs @ ..] => parse_call(funcname, exprs),
             _ => panic!("Invalid Sexpr format: {s}"),
         },
     }
+}
+
+/**
+ * Parses tuple set expressions
+ */
+fn parse_tuple_set_expr(tup: &Sexp, ind: &Sexp, val: &Sexp) -> Expr {
+    Expr::TupleSet(Box::new(parse_sexp_into_expr(tup)), Box::new(parse_sexp_into_expr(ind)), Box::new(parse_sexp_into_expr(val)))
 }
 
 /**

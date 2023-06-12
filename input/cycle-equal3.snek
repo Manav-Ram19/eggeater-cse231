@@ -1,0 +1,11 @@
+(
+   let ((x (tuple 0 0 0)) (y  (tuple 0 0 0)))
+   (
+        block
+        (tuple-set! x 2 y)
+        (tuple-set! y 2 y)
+        (tuple-set! x 1 y)
+        (tuple-set! y 1 y)
+        (deep-equal x y)
+   )
+)

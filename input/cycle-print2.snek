@@ -1,0 +1,10 @@
+(
+    let ((x (tuple 1 2)) (multi-cycle (tuple x x x x x x x x x x)))
+    (
+        block
+        (tuple-set! multi-cycle 1 multi-cycle)
+        (tuple-set! multi-cycle 5 multi-cycle)
+        (tuple-set! multi-cycle 8 multi-cycle)
+        multi-cycle
+    )
+)

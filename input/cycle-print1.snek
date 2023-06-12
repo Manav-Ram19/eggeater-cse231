@@ -1,14 +1,8 @@
 (
-    let ((y (tuple 1 0)) (x (tuple y y)))
+    let ((simple_cycle (tuple 0 1 2 3 4 5)))
     (
         block
-        (print x)
-        (tuple-set! x 0 x)
-        (print x)
-        (tuple-set! x 1 true)
-        (print x)
-        (tuple-set! (tuple-get x 0) 1 false)
-        (print x)
-        (tuple-set! (tuple-get x 0) 0 3)
+        (tuple-set! simple_cycle 5 simple_cycle)
+        simple_cycle
     )
 )

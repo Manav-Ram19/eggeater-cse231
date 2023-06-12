@@ -1,0 +1,12 @@
+(
+    let ((complex-cycle (tuple (tuple 0 0) (tuple 1 0) (tuple 2 0) (tuple 3 0) (tuple 4 0))))
+    (
+        block
+        (tuple-set! (tuple-get complex-cycle 0) 1 (tuple-get complex-cycle 2))
+        (tuple-set! (tuple-get complex-cycle 1) 1 (tuple-get complex-cycle 4))
+        (tuple-set! (tuple-get complex-cycle 2) 1 (tuple-get complex-cycle 3))
+        (tuple-set! (tuple-get complex-cycle 3) 1 (tuple-get complex-cycle 1))
+        (tuple-set! (tuple-get complex-cycle 4) 1 (tuple-get complex-cycle 0))
+        complex-cycle
+    )
+)
